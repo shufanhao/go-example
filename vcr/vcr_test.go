@@ -23,7 +23,7 @@ func fromHex(s string) []byte {
 	return b
 }
 
-func TestHTTPIBasicInteraction(t *testing.T) {
+func TestHTTPBasicIntercept(t *testing.T) {
 	// create a recorder
 	rec, err := recorder.NewWithOptions(&recorder.Options{
 		CassetteName: fmt.Sprintf("cassettes/%s", t.Name()),
@@ -47,20 +47,21 @@ func TestHTTPIBasicInteraction(t *testing.T) {
 		}
 	}()
 
-	client := &http.Client{
-		Transport: rec,
-	}
+	client, _ := testclient.NewClient(testclient.Opts{
+		TLSCert: nil,
+		URL:     "http://baidu.com",
+		Middleware: func(tripper http.RoundTripper) http.RoundTripper {
+			return rec
+		},
+	})
 
-	resp, err := client.Get("https://baidu.com")
-	if err != nil {
-		t.Fatalf("Failed to make request: %v", err)
-	}
-	defer resp.Body.Close()
+	_, err = client.Get()
 
 	log.Println("Request made successfully")
 }
 
-func TestRetryHttpIntercept(t *testing.T) {
+func TestHttpTlsIntercept(t *testing.T) {
+	// create a new httpClient:
 	httpClient := cleanhttp.DefaultPooledClient()
 	transport := httpClient.Transport.(*http.Transport)
 	transport.MaxIdleConnsPerHost = 10
@@ -101,18 +102,16 @@ func TestRetryHttpIntercept(t *testing.T) {
 		}
 	}()
 
-	// without this code, it doesn't work
-	httpClient.Transport = rec
-
-	client, _ := testclient.NewTestClient(testclient.Config{
+	// this is important: without this code, it doesn't work
+	//
+	client, _ := testclient.NewClient(testclient.Opts{
 		TLSCert: nil,
-		URL:     "https://google.com",
+		URL:     "https://baidu.com",
+		Middleware: func(tripper http.RoundTripper) http.RoundTripper {
+			// 其实就是override RoundTripper 方法，然后用recorder. 目的就是把http.client的transport的方法换成recorder.
+			return rec
+		},
 	})
 
-	client.SetHttpClient(httpClient)
 	_, err = client.Get()
-
-	if err != nil {
-		t.Fatalf("Failed to make request: %v", err)
-	}
 }

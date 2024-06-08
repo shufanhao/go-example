@@ -15,24 +15,45 @@ type Client struct {
 	httpClient *http.Client
 }
 
-type Config struct {
+type Opts struct {
 	TLSCert *tls.Certificate
 	URL     string
+	// Middleware to wrap the default transport
+	Middleware Middleware
 }
 
-func (c *Client) SetHttpClient(httpClient *http.Client) {
-	c.httpClient = httpClient
-}
+type Middleware func(http.RoundTripper) http.RoundTripper
 
-func NewTestClient(cfg Config) (*Client, error) {
-	apiURL, err := url.Parse(cfg.URL)
+func NewClient(opts Opts) (*Client, error) {
+	apiURL, err := url.Parse(opts.URL)
 	if err != nil {
-		return nil, fmt.Errorf("invalid API URL %q: %w", cfg.URL, err)
+		return nil, fmt.Errorf("invalid API URL %q: %w", opts.URL, err)
+	}
+
+	transport := &http.Transport{
+		Proxy:        http.ProxyFromEnvironment,
+		MaxIdleConns: 100,
+		// .....
+	}
+
+	if opts.TLSCert != nil {
+		transport.TLSClientConfig = &tls.Config{
+			Certificates: []tls.Certificate{*opts.TLSCert},
+		}
+	}
+
+	// http.RoundTripper is a interface. golang接口和实现之间是隐式。transport这个结构体中实现了RoundTrip这个方法
+	// 并且http.RoundTripper声明了RoundTrip方法，说以可以把transport赋值给接口。
+	var roundTripper http.RoundTripper = transport
+
+	if opts.Middleware != nil {
+		// 可以通过外部赋值Middleware的方式来修改http client的transport.
+		roundTripper = opts.Middleware(roundTripper)
 	}
 
 	return &Client{
 		apiURL:     apiURL,
-		httpClient: http.DefaultClient,
+		httpClient: &http.Client{Transport: roundTripper},
 	}, nil
 }
 

@@ -1,0 +1,57 @@
+---
+version: 2
+interactions:
+    - id: 0
+      request:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        content_length: 0
+        transfer_encoding: []
+        trailer: {}
+        host: baidu.com
+        remote_addr: ""
+        request_uri: ""
+        body: ""
+        form: {}
+        headers:
+            User-Agent:
+                - testing
+        url: http://baidu.com
+        method: GET
+      response:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        transfer_encoding: []
+        trailer: {}
+        content_length: 81
+        uncompressed: false
+        body: |
+            <html>
+            <meta http-equiv="refresh" content="0;url=http://www.baidu.com/">
+            </html>
+        headers:
+            Accept-Ranges:
+                - bytes
+            Cache-Control:
+                - max-age=86400
+            Connection:
+                - Keep-Alive
+            Content-Length:
+                - "81"
+            Content-Type:
+                - text/html
+            Date:
+                - Sat, 08 Jun 2024 00:33:40 GMT
+            Etag:
+                - '"51-47cf7e6ee8400"'
+            Expires:
+                - Sun, 09 Jun 2024 00:33:40 GMT
+            Last-Modified:
+                - Tue, 12 Jan 2010 13:48:00 GMT
+            Server:
+                - Apache
+        status: 200 OK
+        code: 200
+        duration: 2.293020041s
